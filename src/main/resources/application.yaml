@@ -1,4 +1,16 @@
 spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: "spyder.gsc2024@gmail.com"
+    password: "vuwucsyblvcarhfe"
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
+          ssl.trust: smtp.gmail.com
   datasource:
     username: root
     password: 1401
@@ -10,9 +22,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
 project:
   poster: poster/
-
 base:
   url: "http://localhost:8080"

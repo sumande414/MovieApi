@@ -12,7 +12,9 @@ import java.util.UUID;
 
 @Service
 public class RefreshTokenService {
+
     private final UserRepository userRepository;
+
     private final RefreshTokenRepository refreshTokenRepository;
 
     public RefreshTokenService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository) {
@@ -20,31 +22,38 @@ public class RefreshTokenService {
         this.refreshTokenRepository = refreshTokenRepository;
     }
 
-    public RefreshToken createRefreshToken(String username){
-        User user = userRepository.findByEmail(username).orElseThrow(()->new UsernameNotFoundException("User not found with email: " + username));
+    public RefreshToken createRefreshToken(String username) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email : " + username));
+
         RefreshToken refreshToken = user.getRefreshToken();
-        if(refreshToken == null){
-            long refreshTokenValidity = 30 * 1000;
-            refreshToken = RefreshToken
-                    .builder()
+        long refreshTokenValidity = 30 * 1000;
+        if (refreshToken == null) {
+
+            refreshToken = RefreshToken.builder()
                     .refreshToken(UUID.randomUUID().toString())
                     .expirationTime(Instant.now().plusMillis(refreshTokenValidity))
                     .user(user)
                     .build();
-            refreshTokenRepository.save(refreshToken);
+        }
+        else if(refreshToken.getExpirationTime().isBefore(Instant.now())){
+            refreshToken.setRefreshToken(UUID.randomUUID().toString());
+            refreshToken.setExpirationTime(Instant.now().plusMillis(refreshTokenValidity));
         }
 
-        return refreshToken;
+        return refreshTokenRepository.save(refreshToken);
     }
 
-    public RefreshToken verifyRefreshToken(RefreshToken refreshToken) {
+    public RefreshToken verifyRefreshToken(String refreshToken) {
         RefreshToken refToken = refreshTokenRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(()-> new RuntimeException("Refresh Token not found!!"));
+                .orElseThrow(() -> new RuntimeException("Refresh token not found!"));
 
-        if(refToken.getExpirationTime().compareTo(Instant.now()) < 0) {
+        System.out.println(refToken.getExpirationTime()+"\t"+Instant.now());
+        if (refToken.getExpirationTime().isBefore(Instant.now())) {
             refreshTokenRepository.delete(refToken);
-            throw new RuntimeException("Refresh token expired");
+            throw new RuntimeException("Refresh Token expired");
         }
+
         return refToken;
     }
 }
